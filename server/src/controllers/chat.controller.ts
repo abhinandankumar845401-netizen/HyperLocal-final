@@ -30,8 +30,8 @@ Rules:
 - Keep responses friendly, concise, and under 3 sentences.
 - Always promote local, trusted shopping.`;
 
-    // Try models in order of preference
-    const modelNames = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    // Try models in order of preference (gemini-flash-latest has quota, 2.0-flash might be exhausted)
+    const modelNames = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     let lastError: any = null;
 
     const genai = new GoogleGenAI({ apiKey });

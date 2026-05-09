@@ -78,6 +78,17 @@ const CATEGORY_ICONS: Record<string, string> = {
   Printing: '🖨️', Flowers: '🌸', Laundry: '👔', Stationery: '✏️', Default: '🏪',
 };
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  Grocery: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80',
+  Pharmacy: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?auto=format&fit=crop&w=400&q=80',
+  Electronics: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=400&q=80',
+  Bakery: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80',
+  Clothing: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=400&q=80',
+  Repairs: 'https://images.unsplash.com/photo-1487700160041-babef9c3cb55?auto=format&fit=crop&w=400&q=80',
+  Food: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+  Default: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?auto=format&fit=crop&w=400&q=80',
+};
+
 const CATEGORIES = ['All', 'Grocery', 'Pharmacy', 'Electronics', 'Bakery', 'Food', 'Clothing', 'Repairs'];
 
 // Component to handle map centering when coordinates change
@@ -283,11 +294,17 @@ export default function CustomerDashboard() {
                     className="overflow-hidden border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm cursor-pointer group hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
                     onClick={() => setSelectedShop(shop)}
                   >
-                    <div className="h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 relative">
-                      <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                    <div className="h-32 bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+                      <img 
+                        src={(shop as any).images?.[0] || CATEGORY_IMAGES[shop.category] || CATEGORY_IMAGES.Default} 
+                        alt={shop.shopName}
+                        className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent z-0" />
+                      <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 px-3 py-1 rounded-full text-xs font-bold shadow-sm z-10">
                         {CATEGORY_ICONS[shop.category] || '🏪'} {shop.category}
                       </div>
-                      <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm ${shop.isOpen ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                      <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm z-10 ${shop.isOpen ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                         {shop.isOpen ? 'OPEN' : 'CLOSED'}
                       </div>
                     </div>
@@ -543,8 +560,8 @@ export default function CustomerDashboard() {
               <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                 <li onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-blue-600 cursor-pointer">Nearby Shops</li>
                 <li onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-blue-600 cursor-pointer">My Orders</li>
-                <li onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-blue-600 cursor-pointer">TrustBot AI</li>
-                <li onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-blue-600 cursor-pointer">Become a Seller</li>
+                <li onClick={() => document.querySelector('.fixed.bottom-6.right-6')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))} className="hover:text-blue-600 cursor-pointer">TrustBot AI</li>
+                <li onClick={() => navigate('/auth')} className="hover:text-blue-600 cursor-pointer">Become a Seller</li>
               </ul>
             </div>
             <div className="text-left">

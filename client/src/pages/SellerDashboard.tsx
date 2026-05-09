@@ -10,8 +10,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useAuthStore } from '@/store/useAuthStore';
 import TrustBot from '@/components/TrustBot';
+
+// Fix for default marker icons in Leaflet with React
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
 const MOCK_ORDERS = [
   { id: "ORD-2201", customer: "Rahul M.", items: 3, amount: 420, status: "pending", time: "5 min ago" },
@@ -45,6 +57,25 @@ export default function SellerDashboard() {
   const { user, logout } = useAuthStore();
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', quantity: '', category: '' });
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [location, setLocation] = useState<[number, number]>([28.6139, 77.2090]); // Default Delhi
+
+  useState(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setLocation([pos.coords.latitude, pos.coords.longitude]);
+      });
+    }
+  });
+
+  const shopIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
 
   const handleLogout = () => {
     logout();
@@ -64,7 +95,7 @@ export default function SellerDashboard() {
         </div>
         <nav className="p-4 flex-1 space-y-1">
           {[
-            { label: "Overview", icon: <BarChart3 className="w-4 h-4" />, active: true },
+            { label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
             { label: "Orders", icon: <Package className="w-4 h-4" /> },
             { label: "Inventory", icon: <Zap className="w-4 h-4" /> },
             { label: "Customers", icon: <Users className="w-4 h-4" /> },
@@ -72,7 +103,11 @@ export default function SellerDashboard() {
             { label: "TrustBot AI", icon: <Bot className="w-4 h-4" /> },
             { label: "Settings", icon: <Settings className="w-4 h-4" /> },
           ].map((item) => (
-            <button key={item.label} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${item.active ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+            <button 
+              key={item.label} 
+              onClick={() => setActiveTab(item.label)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === item.label ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >
               {item.icon} {item.label}
             </button>
           ))}
@@ -110,41 +145,43 @@ export default function SellerDashboard() {
       </header>
 
       <main className="lg:ml-64 p-6 space-y-6">
-        {/* Trust Score Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white"
-        >
-          <div className="absolute top-0 right-0 w-80 h-80 bg-green-500/10 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4" />
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div>
-              <p className="text-slate-400 text-sm mb-1">Your Shop Trust Score</p>
-              <div className="flex items-end gap-3">
-                <span className="text-6xl font-black text-green-400">92</span>
-                <span className="text-slate-400 text-xl mb-2">/100</span>
+        {activeTab === 'Overview' && (
+          <>
+            {/* Trust Score Banner */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white"
+            >
+              <div className="absolute top-0 right-0 w-80 h-80 bg-green-500/10 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4" />
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div>
+                  <p className="text-slate-400 text-sm mb-1">Your Shop Trust Score</p>
+                  <div className="flex items-end gap-3">
+                    <span className="text-6xl font-black text-green-400">92</span>
+                    <span className="text-slate-400 text-xl mb-2">/100</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 text-green-400 text-sm">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>+4 pts this week — Top 5% in your area</span>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-5 py-4">
+                    <div className="text-2xl font-bold text-green-400">₹28,400</div>
+                    <div className="text-slate-400 text-xs mt-1">Today's Revenue</div>
+                  </div>
+                  <div className="text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-5 py-4">
+                    <div className="text-2xl font-bold">14</div>
+                    <div className="text-slate-400 text-xs mt-1">Orders Today</div>
+                  </div>
+                  <div className="text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-5 py-4">
+                    <div className="text-2xl font-bold text-blue-400">4.8★</div>
+                    <div className="text-slate-400 text-xs mt-1">Avg Rating</div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-2 text-green-400 text-sm">
-                <TrendingUp className="w-4 h-4" />
-                <span>+4 pts this week — Top 5% in your area</span>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-5 py-4">
-                <div className="text-2xl font-bold text-green-400">₹28,400</div>
-                <div className="text-slate-400 text-xs mt-1">Today's Revenue</div>
-              </div>
-              <div className="text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-5 py-4">
-                <div className="text-2xl font-bold">14</div>
-                <div className="text-slate-400 text-xs mt-1">Orders Today</div>
-              </div>
-              <div className="text-center bg-white/5 border border-white/10 backdrop-blur-sm rounded-2xl px-5 py-4">
-                <div className="text-2xl font-bold text-blue-400">4.8★</div>
-                <div className="text-slate-400 text-xs mt-1">Avg Rating</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
 
         {/* Alerts */}
         {MOCK_PRODUCTS.filter(p => p.status !== 'ok').length > 0 && (
@@ -233,10 +270,27 @@ export default function SellerDashboard() {
                 ))}
               </CardContent>
             </Card>
+
+            {/* Shop Map Location */}
+            <Card className="border border-slate-200/60 dark:border-slate-800/60 shadow-sm overflow-hidden h-64">
+              <CardHeader className="pb-2"><CardTitle className="text-base">Shop Location</CardTitle></CardHeader>
+              <CardContent className="h-full p-0">
+                <MapContainer center={location} zoom={14} style={{ height: '100%', width: '100%', zIndex: 10 }}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <Marker position={location} icon={shopIcon}>
+                    <Popup>Your shop is live here</Popup>
+                  </Marker>
+                </MapContainer>
+              </CardContent>
+            </Card>
+
           </div>
         </div>
+        </>
+        )}
 
         {/* Inventory */}
+        {activeTab === 'Inventory' && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold">Inventory</h2>
@@ -308,6 +362,33 @@ export default function SellerDashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
+
+        {/* Orders */}
+        {activeTab === 'Orders' && (
+          <Card className="border border-slate-200/60 dark:border-slate-800/60 overflow-hidden shadow-sm">
+            <CardHeader><CardTitle>All Orders</CardTitle></CardHeader>
+            <CardContent className="p-0">
+              {MOCK_ORDERS.map((order, i) => (
+                <div key={order.id} className={`flex items-center justify-between px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${i < MOCK_ORDERS.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <Package className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{order.customer}</p>
+                      <p className="text-xs text-slate-400">{order.id} • {order.items} items • {order.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColors[order.status]}`}>{order.status}</span>
+                    <span className="font-bold text-sm">₹{order.amount}</span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <TrustBot />

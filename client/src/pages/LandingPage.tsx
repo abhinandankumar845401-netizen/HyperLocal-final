@@ -199,6 +199,11 @@ export default function LandingPage() {
             <ShieldCheck className="w-5 h-5 text-blue-600" />
             TrustLocal
           </div>
+          <div className="flex gap-6 text-sm font-medium">
+             <button onClick={() => navigate('/auth')} className="text-slate-500 hover:text-blue-600">Become a Seller</button>
+             <button onClick={() => navigate('/auth')} className="text-slate-500 hover:text-blue-600">Login</button>
+             <button className="text-slate-500 hover:text-blue-600">Terms</button>
+          </div>
           <div className="text-sm text-slate-500">
             © 2026 TrustLocal. Built for the Future.
           </div>

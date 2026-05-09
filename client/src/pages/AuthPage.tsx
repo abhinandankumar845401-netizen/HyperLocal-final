@@ -24,6 +24,26 @@ export default function AuthPage() {
   // Shopkeeper specific
   const [shopName, setShopName] = useState('');
   const [category, setCategory] = useState('');
+  const [coordinates, setCoordinates] = useState<[number, number]>([0, 0]);
+  const [locationStatus, setLocationStatus] = useState('Detect Location');
+
+  const detectLocation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setLocationStatus('Detecting...');
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCoordinates([pos.coords.longitude, pos.coords.latitude]);
+          setLocationStatus('Location Detected ✅');
+        },
+        () => {
+          setLocationStatus('Failed to detect ❌');
+        }
+      );
+    } else {
+      setLocationStatus('Not supported ❌');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +86,7 @@ export default function AuthPage() {
         password,
         shopName,
         category,
-        address: { street: 'Main St', city: 'City', state: 'State', zipCode: '00000', coordinates: [0, 0] }
+        address: { street: 'Main St', city: 'Delhi', state: 'DL', zipCode: '110001', coordinates }
       });
       login(data);
       navigate('/seller-dashboard');
@@ -179,6 +199,17 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="s-password">Password</Label>
                       <Input id="s-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Shop Location</Label>
+                      <Button 
+                        onClick={detectLocation} 
+                        variant="outline" 
+                        className={`w-full ${locationStatus.includes('✅') ? 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20' : ''}`}
+                      >
+                        {locationStatus}
+                      </Button>
+                      <p className="text-[10px] text-slate-500">Required to show your shop to nearby customers.</p>
                     </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}
                     <Button className="w-full bg-green-600 hover:bg-green-700 text-white" type="submit" disabled={isLoading}>
